@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Button, Card, Input } from './components/ui'
 import { PostCard } from './components/PostCard'
-import { useServiceStatus } from './hooks/useServiceStatus'
 import {
-  commentsApi,
   createComment,
   createPost,
   fetchComments,
   fetchPosts,
-  postsApi,
   type Comment,
   type Post,
 } from './lib/api'
@@ -22,9 +19,6 @@ function App() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
   const [loadingComments, setLoadingComments] = useState(false)
-
-  const postsOnline = useServiceStatus(postsApi, '/post')
-  const commentsOnline = useServiceStatus(commentsApi, '/posts/health/comments')
 
   async function loadPosts() {
     setLoadingPosts(true)
