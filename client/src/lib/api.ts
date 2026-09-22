@@ -19,12 +19,12 @@ export interface Comment {
 }
 
 export async function fetchPosts() {
-  const { data } = await postsApi.get<Record<string, Post>>('/post')
+  const { data } = await postsApi.get<Record<string, Post>>('/posts')
   return Object.values(data)
 }
 
 export async function createPost(title: string) {
-  const { data } = await postsApi.post<Post>('/post', { title })
+  const { data } = await postsApi.post<Post>('/posts', { title })
   return data
 }
 

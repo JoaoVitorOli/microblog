@@ -78,25 +78,25 @@ function App() {
         </header>
 
         <Card className="mb-8 p-5">
-          <h2 className="mb-3 text-sm font-medium text-zinc-300">Novo post</h2>
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">New post</h2>
           <div className="flex gap-2">
             <Input
-              placeholder="Título do post"
+              placeholder="Post title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreatePost()}
             />
             <Button onClick={handleCreatePost} disabled={creating || !title.trim()}>
-              Publicar
+              Publish
             </Button>
           </div>
         </Card>
 
         <div className="space-y-4">
-          {loadingPosts && <p className="text-sm text-zinc-500">Carregando posts...</p>}
+          {loadingPosts && <p className="text-sm text-zinc-500">Loading posts...</p>}
 
           {!loadingPosts && posts.length === 0 && (
-            <p className="text-sm text-zinc-500">Nenhum post publicado ainda.</p>
+            <p className="text-sm text-zinc-500">No posts published yet.</p>
           )}
 
           {posts.map((post) => (

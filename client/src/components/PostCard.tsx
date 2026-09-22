@@ -34,16 +34,16 @@ export function PostCard({ post, expanded, comments, loadingComments, onToggle, 
           <h3 className="mt-1 text-lg font-semibold text-zinc-100">{post.title}</h3>
         </div>
         <Button variant="ghost" onClick={onToggle}>
-          {expanded ? 'Ocultar' : 'Comentários'}
+          {expanded ? 'Hide' : 'Comments'}
         </Button>
       </div>
 
       {expanded && (
         <div className="mt-5 space-y-4 border-t border-zinc-800 pt-4">
-          {loadingComments && <p className="text-sm text-zinc-500">Carregando comentários...</p>}
+          {loadingComments && <p className="text-sm text-zinc-500">Loading comments...</p>}
 
           {!loadingComments && comments.length === 0 && (
-            <p className="text-sm text-zinc-500">Nenhum comentário ainda.</p>
+            <p className="text-sm text-zinc-500">No comments yet.</p>
           )}
 
           {!loadingComments && comments.length > 0 && (
@@ -59,12 +59,12 @@ export function PostCard({ post, expanded, comments, loadingComments, onToggle, 
           <div className="flex items-start gap-2">
             <Textarea
               rows={2}
-              placeholder="Escreva um comentário..."
+              placeholder="Write a comment..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
             <Button onClick={handleSubmit} disabled={submitting || !content.trim()}>
-              Enviar
+              Send
             </Button>
           </div>
         </div>
