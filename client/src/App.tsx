@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Card, Input } from './components/ui'
+import { Button, Card, Input } from './components/ui'
 import { PostCard } from './components/PostCard'
 import { useServiceStatus } from './hooks/useServiceStatus'
 import {
@@ -81,14 +81,6 @@ function App() {
       <div className="mx-auto max-w-3xl px-4 py-10">
         <header className="mb-8 flex flex-col gap-4">
           <h1 className="text-2xl font-semibold text-zinc-100">Microblog</h1>
-          <div className="flex flex-wrap gap-2">
-            <Badge tone={postsOnline === null ? 'neutral' : postsOnline ? 'online' : 'offline'}>
-              posts · :4000 · {postsOnline === null ? 'verificando' : postsOnline ? 'online' : 'offline'}
-            </Badge>
-            <Badge tone={commentsOnline === null ? 'neutral' : commentsOnline ? 'online' : 'offline'}>
-              comments · :4001 · {commentsOnline === null ? 'verificando' : commentsOnline ? 'online' : 'offline'}
-            </Badge>
-          </div>
         </header>
 
         <Card className="mb-8 p-5">

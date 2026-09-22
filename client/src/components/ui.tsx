@@ -38,16 +38,3 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
     />
   )
 }
-
-export function Badge({ tone = 'neutral', children }: PropsWithChildren<{ tone?: 'neutral' | 'online' | 'offline' }>) {
-  const tones = {
-    neutral: 'bg-zinc-800 text-zinc-300',
-    online: 'bg-emerald-500/10 text-emerald-400',
-    offline: 'bg-red-500/10 text-red-400',
-  }
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>
-      {children}
-    </span>
-  )
-}
