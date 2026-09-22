@@ -1,15 +1,33 @@
-import express from 'express'
+import express from 'express';
+import bodyParser from 'body-parser';
+import { randomBytes } from 'node:crypto'
+
+interface Comments {
+
+}
 
 const app = express();
+app.use(bodyParser.json());
 
-app.get('/post', (req, res) => {
+const commentsByPostId: Record<string, Comments[] & { id: string }> = {};
 
+app.get('/posts/:id/comments', (req, res) => {
+  res.send(commentsByPostId[req.params.id] || []);
 });
 
-app.post('/post', (req, res) => {
-    
+app.post('/posts/:id/comments', (req, res) => {
+  const commentId = randomBytes(4).toString('hex');
+  const { content } = req.body;
+
+  const comments = commentsByPostId[req.params.id] || [];
+
+  comments.push({ id: commentId, content });
+
+  commentsByPostId[req.params.id] = comments;
+
+  res.status(201).send(comments);
 });
 
-app.listen(4000, () => {
-    console.log('Listening on port 4000.');
+app.listen(4001, () => {
+    console.log('Listening on port 4001.');
 })
