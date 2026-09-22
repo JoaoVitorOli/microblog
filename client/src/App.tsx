@@ -1,121 +1,132 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import { Badge, Button, Card, Input } from './components/ui'
+import { PostCard } from './components/PostCard'
+import { useServiceStatus } from './hooks/useServiceStatus'
+import {
+  commentsApi,
+  createComment,
+  createPost,
+  fetchComments,
+  fetchPosts,
+  postsApi,
+  type Comment,
+  type Post,
+} from './lib/api'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [posts, setPosts] = useState<Post[]>([])
+  const [loadingPosts, setLoadingPosts] = useState(true)
+  const [title, setTitle] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
+  const [loadingComments, setLoadingComments] = useState(false)
+
+  const postsOnline = useServiceStatus(postsApi, '/post')
+  const commentsOnline = useServiceStatus(commentsApi, '/posts/health/comments')
+
+  async function loadPosts() {
+    setLoadingPosts(true)
+    try {
+      const data = await fetchPosts()
+      setPosts(data)
+    } catch {
+      setPosts([])
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPosts()
+  }, [])
+
+  async function handleCreatePost() {
+    if (!title.trim()) return
+    setCreating(true)
+    try {
+      await createPost(title.trim())
+      setTitle('')
+      await loadPosts()
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleToggle(postId: string) {
+    if (expandedId === postId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(postId)
+    if (!commentsByPost[postId]) {
+      setLoadingComments(true)
+      try {
+        const data = await fetchComments(postId)
+        setCommentsByPost((prev) => ({ ...prev, [postId]: data }))
+      } finally {
+        setLoadingComments(false)
+      }
+    }
+  }
+
+  async function handleAddComment(postId: string, content: string) {
+    const data = await createComment(postId, content)
+    setCommentsByPost((prev) => ({ ...prev, [postId]: data }))
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-[#0b0c10]">
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <header className="mb-8 flex flex-col gap-4">
+          <h1 className="text-2xl font-semibold text-zinc-100">Microblog</h1>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone={postsOnline === null ? 'neutral' : postsOnline ? 'online' : 'offline'}>
+              posts · :4000 · {postsOnline === null ? 'verificando' : postsOnline ? 'online' : 'offline'}
+            </Badge>
+            <Badge tone={commentsOnline === null ? 'neutral' : commentsOnline ? 'online' : 'offline'}>
+              comments · :4001 · {commentsOnline === null ? 'verificando' : commentsOnline ? 'online' : 'offline'}
+            </Badge>
+          </div>
+        </header>
 
-      <div className="ticks"></div>
+        <Card className="mb-8 p-5">
+          <h2 className="mb-3 text-sm font-medium text-zinc-300">Novo post</h2>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Título do post"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreatePost()}
+            />
+            <Button onClick={handleCreatePost} disabled={creating || !title.trim()}>
+              Publicar
+            </Button>
+          </div>
+        </Card>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <div className="space-y-4">
+          {loadingPosts && <p className="text-sm text-zinc-500">Carregando posts...</p>}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          {!loadingPosts && posts.length === 0 && (
+            <p className="text-sm text-zinc-500">Nenhum post publicado ainda.</p>
+          )}
+
+          {posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              expanded={expandedId === post.id}
+              comments={commentsByPost[post.id] ?? []}
+              loadingComments={expandedId === post.id && loadingComments}
+              onToggle={() => handleToggle(post.id)}
+              onAddComment={(content) => handleAddComment(post.id, content)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
