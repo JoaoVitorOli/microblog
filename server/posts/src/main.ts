@@ -1,12 +1,14 @@
 import express from 'express'
 import { randomBytes } from 'node:crypto'
 import bodyParser from 'body-parser'
+import cors from 'cors'
 
 interface Posts {
   title: string;
 }
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 const posts: Record<string, Posts & { id: string }> = {};

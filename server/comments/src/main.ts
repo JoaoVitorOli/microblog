@@ -1,12 +1,14 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import { randomBytes } from 'node:crypto'
+import cors from 'cors'
 
 interface Comments {
 
 }
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 const commentsByPostId: Record<string, Comments[] & { id: string }> = {};
