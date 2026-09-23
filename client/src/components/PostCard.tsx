@@ -1,19 +1,28 @@
 import { useState } from 'react'
 import type { Comment, Post } from '../lib/api'
-import { Button, Card, Textarea } from './ui'
+import { Badge, Button, Card, Textarea } from './ui'
 
 interface Props {
   post: Post
   expanded: boolean
-  comments: Comment[]
-  loadingComments: boolean
+  rejectedNoticeIds: Set<string>
   onToggle: () => void
   onAddComment: (content: string) => Promise<void>
 }
 
-export function PostCard({ post, expanded, comments, loadingComments, onToggle, onAddComment }: Props) {
+function statusTone(status: Comment['status']) {
+  if (status === 'approved') return 'success'
+  if (status === 'rejected') return 'danger'
+  return 'neutral'
+}
+
+export function PostCard({ post, expanded, rejectedNoticeIds, onToggle, onAddComment }: Props) {
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const visibleComments = post.comments.filter(
+    (c) => c.status !== 'rejected' || rejectedNoticeIds.has(c.id),
+  )
 
   async function handleSubmit() {
     if (!content.trim()) return
@@ -34,23 +43,27 @@ export function PostCard({ post, expanded, comments, loadingComments, onToggle, 
           <h3 className="mt-1 text-lg font-semibold text-zinc-100">{post.title}</h3>
         </div>
         <Button variant="ghost" onClick={onToggle}>
-          {expanded ? 'Hide' : 'Comments'}
+          {expanded ? 'Hide' : `Comments (${visibleComments.length})`}
         </Button>
       </div>
 
       {expanded && (
         <div className="mt-5 space-y-4 border-t border-zinc-800 pt-4">
-          {loadingComments && <p className="text-sm text-zinc-500">Loading comments...</p>}
-
-          {!loadingComments && comments.length === 0 && (
+          {visibleComments.length === 0 && (
             <p className="text-sm text-zinc-500">No comments yet.</p>
           )}
 
-          {!loadingComments && comments.length > 0 && (
+          {visibleComments.length > 0 && (
             <ul className="space-y-2">
-              {comments.map((comment) => (
-                <li key={comment.id} className="rounded-lg bg-zinc-950 px-3 py-2 text-sm text-zinc-300">
-                  {comment.content}
+              {visibleComments.map((comment) => (
+                <li
+                  key={comment.id}
+                  className="flex items-center justify-between gap-3 rounded-lg bg-zinc-950 px-3 py-2 text-sm"
+                >
+                  <span className={comment.status === 'rejected' ? 'italic text-zinc-500' : 'text-zinc-300'}>
+                    {comment.status === 'rejected' ? 'Your comment has been rejected' : comment.content}
+                  </span>
+                  <Badge tone={statusTone(comment.status)}>{comment.status}</Badge>
                 </li>
               ))}
             </ul>

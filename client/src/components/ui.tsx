@@ -30,6 +30,22 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   )
 }
 
+export function Badge({
+  tone = 'neutral',
+  children,
+}: PropsWithChildren<{ tone?: 'neutral' | 'success' | 'danger' }>) {
+  const styles = {
+    neutral: 'bg-zinc-800 text-zinc-400',
+    success: 'bg-emerald-500/10 text-emerald-400',
+    danger: 'bg-red-500/10 text-red-400',
+  }
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${styles[tone]}`}>
+      {children}
+    </span>
+  )
+}
+
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea

@@ -4,8 +4,12 @@ import { randomBytes } from 'node:crypto'
 import cors from 'cors'
 import axios from 'axios';
 
-interface Comments {
+type Status = 'pending' | 'rejected';
 
+interface Comments {
+  id: string;
+  content: string;
+  status: Status;
 }
 
 const app = express();
@@ -24,22 +28,46 @@ app.post('/posts/:id/comments', async (req, res) => {
 
   const comments = commentsByPostId[req.params.id] || [];
 
-  comments.push({ id: commentId, content });
+  comments.push({ id: commentId, content, status: 'pending' });
 
   commentsByPostId[req.params.id] = comments;
 
   await axios.post('http://localhost:4005/events', {
     type: 'CommentCreated',
     data: {
-      id: commentId, content, postId: req.params.id
+      id: commentId, 
+      content, 
+      postId: req.params.id, 
+      status: 'pending'
     }
   });
 
   res.status(201).send(comments);
 });
 
-app.post('/events', (req, res) => {
-  console.log('Received event: ', req.body.type);
+app.post('/events', async (req, res) => {
+  const { type, data } = req.body;
+
+  if (type === "CommentModerated") {
+    const { postId, id, status, content } = data;
+    const comments = commentsByPostId[postId];
+
+    const comment = comments.find((comment) => comment.id === id);
+
+    if (comment) {
+      comment.status = status;
+    }
+
+    await axios.post("http://localhost:4005/events", {
+      type: "CommentUpdated",
+      data: {
+        id,
+        status,
+        postId,
+        content,
+      },
+    });
+  }
 
   res.send({});
 });

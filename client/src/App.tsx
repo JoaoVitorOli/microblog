@@ -1,30 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Button, Card, Input } from './components/ui'
 import { PostCard } from './components/PostCard'
-import {
-  createComment,
-  createPost,
-  fetchComments,
-  fetchPosts,
-  type Comment,
-  type Post,
-} from './lib/api'
+import { createComment, createPost, fetchPosts, type Post } from './lib/api'
 
 function App() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [title, setTitle] = useState('')
   const [creating, setCreating] = useState(false)
-
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
-  const [loadingComments, setLoadingComments] = useState(false)
+  const [pendingCommentIds, setPendingCommentIds] = useState<string[]>([])
+  const [rejectedNoticeIds, setRejectedNoticeIds] = useState<Set<string>>(new Set())
 
   async function loadPosts() {
     setLoadingPosts(true)
     try {
       const data = await fetchPosts()
-      setPosts(data)
+      setPosts(data || [])
     } catch {
       setPosts([])
     } finally {
@@ -35,6 +27,49 @@ function App() {
   useEffect(() => {
     loadPosts()
   }, [])
+
+  useEffect(() => {
+    if (pendingCommentIds.length === 0) return
+
+    const interval = setInterval(async () => {
+      const data = await fetchPosts()
+      const freshComments = data.flatMap((post) => post.comments)
+
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          const updated = data.find((p) => p.id === post.id)
+          if (!updated) return post
+          return {
+            ...post,
+            comments: post.comments.map((comment) => {
+              const fresh = updated.comments.find((c) => c.id === comment.id)
+              return fresh ?? comment
+            }),
+          }
+        }),
+      )
+
+      const stillPending: string[] = []
+      const newlyRejected: string[] = []
+
+      for (const id of pendingCommentIds) {
+        const fresh = freshComments.find((c) => c.id === id)
+        if (!fresh || fresh.status === 'pending') {
+          stillPending.push(id)
+        } else if (fresh.status === 'rejected') {
+          newlyRejected.push(id)
+        }
+      }
+
+      if (newlyRejected.length > 0) {
+        setRejectedNoticeIds((prev) => new Set([...prev, ...newlyRejected]))
+      }
+
+      setPendingCommentIds(stillPending)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [pendingCommentIds])
 
   async function handleCreatePost() {
     if (!title.trim()) return
@@ -48,26 +83,16 @@ function App() {
     }
   }
 
-  async function handleToggle(postId: string) {
-    if (expandedId === postId) {
-      setExpandedId(null)
-      return
-    }
-    setExpandedId(postId)
-    if (!commentsByPost[postId]) {
-      setLoadingComments(true)
-      try {
-        const data = await fetchComments(postId)
-        setCommentsByPost((prev) => ({ ...prev, [postId]: data }))
-      } finally {
-        setLoadingComments(false)
-      }
-    }
-  }
-
   async function handleAddComment(postId: string, content: string) {
-    const data = await createComment(postId, content)
-    setCommentsByPost((prev) => ({ ...prev, [postId]: data }))
+    const comment = await createComment(postId, content)
+
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId ? { ...post, comments: [...post.comments, comment] } : post,
+      ),
+    )
+
+    setPendingCommentIds((prev) => [...prev, comment.id])
   }
 
   return (
@@ -99,14 +124,13 @@ function App() {
             <p className="text-sm text-zinc-500">No posts published yet.</p>
           )}
 
-          {posts.map((post) => (
+          {posts && posts.map((post) => (
             <PostCard
               key={post.id}
               post={post}
               expanded={expandedId === post.id}
-              comments={commentsByPost[post.id] ?? []}
-              loadingComments={expandedId === post.id && loadingComments}
-              onToggle={() => handleToggle(post.id)}
+              rejectedNoticeIds={rejectedNoticeIds}
+              onToggle={() => setExpandedId((prev) => (prev === post.id ? null : post.id))}
               onAddComment={(content) => handleAddComment(post.id, content)}
             />
           ))}
