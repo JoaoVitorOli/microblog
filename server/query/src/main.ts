@@ -1,6 +1,7 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import cors from 'cors'
+import axios from 'axios'
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,13 +17,7 @@ interface Comments {
 
 const posts: Record<string, {id: string, title: string, comments: Comments[]}> = {};
 
-app.get('/posts', (req, res) => {
-  res.send(Object.values(posts));
-});
-
-app.post('/events', (req, res) => {
-  const { type, data } = req.body;
-
+const handleEvent = (type: string, data: any) => {
   if (type === 'PostCreated') {
     const { id, title } = data;
 
@@ -47,10 +42,28 @@ app.post('/events', (req, res) => {
       comment.content = content;
     }
   }
+}
+
+app.get('/posts', (req, res) => {
+  res.send(Object.values(posts));
+});
+
+app.post('/events', (req, res) => {
+  const { type, data } = req.body;
+
+  handleEvent(type, data);
 
   res.send({});
 })
 
-app.listen(4002, () => {
+app.listen(4002, async () => {
   console.log('Listening on 4002')
+
+  const res = await axios.get('http://localhost:4005/events');
+
+  for (let event of res.data) {
+    console.log('Processing event: ', event.type);
+
+    handleEvent(event.type, event.data);
+  }
 })
